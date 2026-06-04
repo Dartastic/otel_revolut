@@ -2,7 +2,6 @@
 // Copyright 2025-2026 Mindful Software LLC d/b/a Dartastic.io, All rights reserved.
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 import 'otel_revolut_suppression.dart';
 
@@ -54,48 +53,64 @@ Future<T> tracedRevolut<T>({
   final t = tracer ?? OTel.tracerProvider().getTracer('otel_revolut');
   final span = t.startSpan('revolut $operation', kind: SpanKind.client);
   try {
-    span.setStringAttribute('rpc.system', 'revolut');
+    span.addAttributes(
+        OTel.attributes([OTel.attributeString('rpc.system', 'revolut')]));
     final r = await invoke();
     final res = r.result;
     if (res != null) {
       if (res.businessId != null) {
-        span.setStringAttribute('revolut.business.id', res.businessId!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('revolut.business.id', res.businessId!)]));
       }
       if (res.counterpartyId != null) {
-        span.setStringAttribute('revolut.counterparty.id', res.counterpartyId!);
+        span.addAttributes(OTel.attributes([
+          OTel.attributeString('revolut.counterparty.id', res.counterpartyId!)
+        ]));
       }
       if (res.accountId != null) {
-        span.setStringAttribute('revolut.account.id', res.accountId!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('revolut.account.id', res.accountId!)]));
       }
       if (res.cardId != null) {
-        span.setStringAttribute('revolut.card.id', res.cardId!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('revolut.card.id', res.cardId!)]));
       }
       if (res.transactionId != null) {
-        span.setStringAttribute('revolut.transaction.id', res.transactionId!);
+        span.addAttributes(OTel.attributes([
+          OTel.attributeString('revolut.transaction.id', res.transactionId!)
+        ]));
       }
       if (res.type != null) {
-        span.setStringAttribute('revolut.transaction.type', res.type!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('revolut.transaction.type', res.type!)]));
       }
       if (res.amount != null) {
-        span.setDoubleAttribute('revolut.amount', res.amount!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeDouble('revolut.amount', res.amount!)]));
       }
       if (res.currency != null) {
-        span.setStringAttribute('revolut.currency', res.currency!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('revolut.currency', res.currency!)]));
       }
       if (res.state != null) {
-        span.setStringAttribute('revolut.state', res.state!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('revolut.state', res.state!)]));
       }
       if (res.statusCode != null) {
-        span.setIntAttribute('http.response.status_code', res.statusCode!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeInt('http.response.status_code', res.statusCode!)]));
       }
       if (res.errorCode != null) {
-        span.setStringAttribute('revolut.error.code', res.errorCode!);
+        span.addAttributes(OTel.attributes(
+            [OTel.attributeString('revolut.error.code', res.errorCode!)]));
       }
       final fail = res.errorCode != null ||
           (res.statusCode != null && res.statusCode! >= 400);
       if (fail) {
-        span.setStringAttribute(
-            ErrorResource.errorType.key, res.errorCode ?? 'revolut.error');
+        span.addAttributes(OTel.attributes([
+          OTel.attributeString(
+              ErrorResource.errorType.key, res.errorCode ?? 'revolut.error')
+        ]));
         span.setStatus(SpanStatusCode.Error, res.errorMessage);
       }
     }
