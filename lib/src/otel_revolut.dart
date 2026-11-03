@@ -1,11 +1,12 @@
-// Licensed under the Dartastic Pro Software License Agreement.
+// Licensed under the Apache License, Version 2.0
 // Copyright 2025-2026 Mindful Software LLC d/b/a Dartastic.io, All rights reserved.
 
-import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 import 'otel_revolut_suppression.dart';
 
 class RevolutResult {
+  /// Creates a result.
   const RevolutResult({
     this.businessId,
     this.counterpartyId,
@@ -35,8 +36,13 @@ class RevolutResult {
   final String? errorMessage;
 }
 
+/// What a traced call returned: the value for the caller plus fields
+/// recorded on the span.
 class RevolutCallResult<T> {
+  /// Creates a call result.
   const RevolutCallResult({required this.value, this.result});
+
+  /// The value returned to the caller.
   final T value;
   final RevolutResult? result;
 }
@@ -44,72 +50,74 @@ class RevolutCallResult<T> {
 Future<T> tracedRevolut<T>({
   required String operation,
   required Future<RevolutCallResult<T>> Function() invoke,
-  Tracer? tracer,
+  APITracer? tracer,
 }) async {
   if (revolutInstrumentationSuppressed()) {
     final r = await invoke();
     return r.value;
   }
-  final t = tracer ?? OTel.tracerProvider().getTracer('otel_revolut');
+  final t = tracer ?? OTelAPI.tracerProvider().getTracer('otel_revolut');
   final span = t.startSpan('revolut $operation', kind: SpanKind.client);
   try {
     span.addAttributes(
-        OTel.attributes([OTel.attributeString('rpc.system', 'revolut')]));
+        OTelAPI.attributes([OTelAPI.attributeString('rpc.system', 'revolut')]));
     final r = await invoke();
     final res = r.result;
     if (res != null) {
       if (res.businessId != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('revolut.business.id', res.businessId!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('revolut.business.id', res.businessId!)]));
       }
       if (res.counterpartyId != null) {
-        span.addAttributes(OTel.attributes([
-          OTel.attributeString('revolut.counterparty.id', res.counterpartyId!)
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeString(
+              'revolut.counterparty.id', res.counterpartyId!)
         ]));
       }
       if (res.accountId != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('revolut.account.id', res.accountId!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('revolut.account.id', res.accountId!)]));
       }
       if (res.cardId != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('revolut.card.id', res.cardId!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('revolut.card.id', res.cardId!)]));
       }
       if (res.transactionId != null) {
-        span.addAttributes(OTel.attributes([
-          OTel.attributeString('revolut.transaction.id', res.transactionId!)
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeString('revolut.transaction.id', res.transactionId!)
         ]));
       }
       if (res.type != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('revolut.transaction.type', res.type!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('revolut.transaction.type', res.type!)]));
       }
       if (res.amount != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeDouble('revolut.amount', res.amount!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeDouble('revolut.amount', res.amount!)]));
       }
       if (res.currency != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('revolut.currency', res.currency!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('revolut.currency', res.currency!)]));
       }
       if (res.state != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('revolut.state', res.state!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('revolut.state', res.state!)]));
       }
       if (res.statusCode != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeInt('http.response.status_code', res.statusCode!)]));
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeInt('http.response.status_code', res.statusCode!)
+        ]));
       }
       if (res.errorCode != null) {
-        span.addAttributes(OTel.attributes(
-            [OTel.attributeString('revolut.error.code', res.errorCode!)]));
+        span.addAttributes(OTelAPI.attributes(
+            [OTelAPI.attributeString('revolut.error.code', res.errorCode!)]));
       }
       final fail = res.errorCode != null ||
           (res.statusCode != null && res.statusCode! >= 400);
       if (fail) {
-        span.addAttributes(OTel.attributes([
-          OTel.attributeString(
-              ErrorResource.errorType.key, res.errorCode ?? 'revolut.error')
+        span.addAttributes(OTelAPI.attributes([
+          OTelAPI.attributeString(
+              ErrorAttributes.errorType.key, res.errorCode ?? 'revolut.error')
         ]));
         span.setStatus(SpanStatusCode.Error, res.errorMessage);
       }
